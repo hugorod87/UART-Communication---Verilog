@@ -1,0 +1,50 @@
+`timescale 1ns/10ps
+//`include "uart_receiver.v"
+
+module uart_receiver_TB();
+	parameter c_CLOCK_PERIOD = 100;
+	parameter c_BIT_PERIOD = 8600;
+	
+	reg r_Clock = 0;
+	reg r_Rx_Serial = 1;
+	
+	task UART_WRITE_BYTE;
+		input [7:0] i_Data;
+		integer ii;
+		begin
+			
+			// Send the first bit - START BIT
+			r_Rx_Serial <= 1'b0;
+			#(c_BIT_PERIOD);
+			//#1000;
+			
+			// Send Data Byte
+			for (ii=0; ii<8; ii=ii+1)
+				begin
+					r_Rx_Serial <= i_Data[ii];
+					#(c_BIT_PERIOD);
+				end
+				
+			// Send Stop Bit
+			r_Rx_Serial <= 1'b1;
+			#(c_BIT_PERIOD);
+		end
+	endtask
+	
+	uart_receiver uut
+		(.i_Clock(r_Clock),
+		.i_Rx_Serial(r_Rx_Serial),
+		.o_Tx_Serial()
+		);
+		
+	always
+		#(c_CLOCK_PERIOD/2) r_Clock <= !r_Clock;
+		
+	initial 
+		begin
+			@(posedge r_Clock);
+			UART_WRITE_BYTE(8'hAB);
+		end
+endmodule
+		
+	
